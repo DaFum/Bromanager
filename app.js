@@ -679,7 +679,7 @@ console.log('app initialized');
   } catch (err) {
     console.error('Initialization error', err);
     const panel = document.getElementById('contextPanel'); 
-    if (panel) panel.innerHTML = <h2>Init-Fehler</h2><pre>${err && err.stack ? err.stack : String(err)}</pre>;
+    if (panel) panel.innerHTML = `<h2>Init-Fehler</h2><pre>${err && err.stack ? err.stack : String(err)}</pre>`;
   } 
 }
                          );
