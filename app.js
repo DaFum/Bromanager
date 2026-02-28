@@ -605,18 +605,56 @@ async function advanceDay() {
   });
 }
 
-document.querySelectorAll('[data-action]').forEach((btn) => {
-  btn.addEventListener('click', async () => {
-    const action = btn.dataset.action;
-    if (action !== 'cams') stopCamStream();
-    if (action === 'talk') askEmployeeContext();
-    if (action === 'assess') askApplicantContext();
-    if (action === 'cams') askCamContext();
-    if (action === 'next') {
-      setContextHtml('<h2>End of Day</h2><p>Daily payroll/revenue calculations applied and memories updated for all staff.</p>');
-      await advanceDay();
+document.querySelectorAll('[data-action]').forEach((btn) => { 
+  btn.addEventListener('click', async () => { 
+    const action = btn.dataset.action; try { // stop streaming unless user opened cams 
+      if (action !== 'cams') stopCamStream();
+        if (action === 'talk') {
+    // Safety wrapper — show errors in the context panel if something fails
+    try {
+      askEmployeeContext();
+    } catch (err) {
+      console.error('askEmployeeContext error', err);
+      setContextHtml(`<h2>Fehler beim Laden</h2><p>askEmployeeContext schlug fehl:</p><pre>${(err && err.stack) ? err.stack : String(err)}</pre>`);
     }
-  });
+    return;
+  }
+
+  if (action === 'assess') {
+    try {
+      askApplicantContext();
+    } catch (err) {
+      console.error('askApplicantContext error', err);
+      setContextHtml(`<h2>Fehler beim Laden</h2><p>askApplicantContext schlug fehl:</p><pre>${(err && err.stack) ? err.stack : String(err)}</pre>`);
+    }
+    return;
+  }
+
+  if (action === 'cams') {
+    try {
+      askCamContext();
+    } catch (err) {
+      console.error('askCamContext error', err);
+      setContextHtml(`<h2>Fehler beim Laden</h2><p>askCamContext schlug fehl:</p><pre>${(err && err.stack) ? err.stack : String(err)}</pre>`);
+    }
+    return;
+  }
+
+  if (action === 'next') {
+    setContextHtml('<h2>End of Day</h2><p>Daily payroll/revenue calculations applied and memories updated for all staff.</p>');
+    try {
+      await advanceDay();
+    } catch (err) {
+      console.error('advanceDay error', err);
+      setContextHtml(`<h2>Fehler beim Fortschritt</h2><pre>${(err && err.stack) ? err.stack : String(err)}</pre>`);
+    }
+    return;
+  }
+} catch (err) {
+  console.error('Unhandled action handler error', err);
+  setContextHtml(`<h2>Unerwarteter Fehler</h2><pre>${(err && err.stack) ? err.stack : String(err)}</pre>`);
+    }
+  }); 
 });
 
 const saveBtn = $('saveConfig');
