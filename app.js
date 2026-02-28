@@ -605,7 +605,15 @@ async function advanceDay() {
   });
 }
 
-document.querySelectorAll('[data-action]').forEach((btn) => { 
+// Expose small debug surface to the console so we can inspect state and call helpers 
+window.appState = state; window.$ = $; // expose setContextHtml for manual testing (console / eruda) 
+window.setContextHtml = function(html) { // delegate to internal impl if available 
+  const panel = document.getElementById('contextPanel'); if (panel) panel.innerHTML = html; };
+
+// Attach event handlers and initialize after DOM ready to avoid race conditions. 
+// Wrap in try/catch so any error is visible in UI. 
+document.addEventListener('DOMContentLoaded', () => { 
+  document.querySelectorAll('[data-action]').forEach((btn) => { 
   btn.addEventListener('click', async () => { 
     const action = btn.dataset.action; try { // stop streaming unless user opened cams 
       if (action !== 'cams') stopCamStream();
@@ -656,15 +664,7 @@ document.querySelectorAll('[data-action]').forEach((btn) => {
     }
   }); 
 });
-
-// Expose small debug surface to the console so we can inspect state and call helpers 
-window.appState = state; window.$ = $; // expose setContextHtml for manual testing (console / eruda) 
-window.setContextHtml = function(html) { // delegate to internal impl if available 
-  const panel = document.getElementById('contextPanel'); if (panel) panel.innerHTML = html; };
-
-// Attach event handlers and initialize after DOM ready to avoid race conditions. 
-// Wrap in try/catch so any error is visible in UI. 
-document.addEventListener('DOMContentLoaded', () => { 
+  
   try { 
     const saveBtn = $('saveConfig');
     if (saveBtn) saveBtn.addEventListener('click', saveConfig);
