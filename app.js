@@ -14,8 +14,9 @@ const state = {
   reputation: 58,
   streamTimer: null,
   streamFrame: 0,
-  lastImageObjectUrl: null, // track blob URL to revoke later
-  activeChat: { type: null, person: null }, // Tracking for the active chat session
+  lastImageObjectUrl: null,
+  // Added messages array to track the history of the current chat session
+  activeChat: { type: null, person: null, messages: [] }, 
   employees: [
     {
       name: 'Sienna',
@@ -213,7 +214,7 @@ function randomApplicant() {
   const base = templates[Math.floor(Math.random() * templates.length)];
   return {
     ...base,
-    memories: [], // Applicants start with no memories
+    memories: [],
     communication: 45 + Math.floor(Math.random() * 51),
     reliability: 45 + Math.floor(Math.random() * 51),
     teamwork: 45 + Math.floor(Math.random() * 51),
@@ -384,7 +385,7 @@ function toggleChat(show, personName = '') {
     const header = $('chatHeader');
     if (header) header.textContent = `Conversation with ${personName}`;
     const log = $('chatLog');
-    if (log) log.innerHTML = ''; // Clear previous chat
+    if (log) log.innerHTML = ''; 
     const input = $('chatInput');
     if (input) input.value = '';
   }
@@ -407,7 +408,6 @@ async function sendChatMessage() {
 
   const person = state.activeChat.person;
   
-  // Disable input while generating
   inputEl.disabled = true;
   const btnEl = $('sendChat');
   if(btnEl) btnEl.disabled = true;
@@ -415,7 +415,6 @@ async function sendChatMessage() {
   appendChatMessage('Manager', message);
   inputEl.value = '';
 
-  // Prepare character prompt
   const memoryStr = (person.memories && person.memories.length > 0) ? `Your memories: ${person.memories.join(' | ')}` : '';
   const statusStr = state.activeChat.type === 'employee' 
     ? `Your current morale: ${person.morale}, trust: ${person.trust}, stress: ${person.stress}.` 
@@ -428,7 +427,15 @@ ${memoryStr}
 Respond directly in-character to the manager's message. 
 Rules: Keep it short (1 to 3 sentences max). Do NOT use asterisks for actions (e.g. *smiles*). Stay authentic to your role and current state.`;
 
-  // UI Loading state
+  // Push user message to conversation history
+  state.activeChat.messages.push({ role: 'user', content: message });
+
+  // Compile full prompt with context history
+  const apiMessages = [
+    { role: 'system', content: systemPrompt },
+    ...state.activeChat.messages
+  ];
+
   const loadingId = 'loading-' + Date.now();
   const log = $('chatLog');
   const loadDiv = document.createElement('div');
@@ -448,10 +455,7 @@ Rules: Keep it short (1 to 3 sentences max). Do NOT use asterisks for actions (e
       headers,
       body: JSON.stringify({
         model: state.config.textModel,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message },
-        ],
+        messages: apiMessages, // Send the whole history!
         temperature: 0.7,
       }),
     });
@@ -465,14 +469,16 @@ Rules: Keep it short (1 to 3 sentences max). Do NOT use asterisks for actions (e
 
     appendChatMessage(person.name, reply);
 
-    // If employee, save conversation as a short memory
-    if (state.activeChat.type === 'employee') {
-      appendMemory(person, `Chatted with Manager. Discussed: "${message.substring(0, 30)}..."`);
+    // Push AI reply to conversation history
+    state.activeChat.messages.push({ role: 'assistant', content: reply });
+
+    // Only add a memory for the FIRST message in a chat to avoid wiping out important memories
+    if (state.activeChat.type === 'employee' && state.activeChat.messages.length <= 2) {
+      appendMemory(person, `Had a conversation with the Manager about: "${message.substring(0, 30)}..."`);
     }
 
-    // Automatically generate a background scene based on the conversation
     const sceneType = state.activeChat.type === 'employee' ? 'Employee Conversation' : 'Applicant Assessment';
-    await generateScene(sceneType, `Manager and ${person.name} are talking. Manager said: "${message}"`, {
+    await generateScene(sceneType, `Manager and ${person.name} are engaged in an ongoing conversation. Manager just said: "${message}"`, {
       memoryContext: `${person.name} is interacting with management.`,
       roleContext: `${person.name} (${person.role}) is engaged in a conversation.`,
       staticPrompt: `character focus: ${person.name}, role: ${person.role}, talking to management, active discussion, looking at camera`,
@@ -482,8 +488,9 @@ Rules: Keep it short (1 to 3 sentences max). Do NOT use asterisks for actions (e
     const lDiv = $(loadingId);
     if(lDiv) lDiv.remove();
     appendChatMessage('System', `Connection error: ${err.message}`);
+    // Rollback the last user message from history on failure
+    state.activeChat.messages.pop();
   } finally {
-    // Re-enable input
     inputEl.disabled = false;
     if(btnEl) btnEl.disabled = false;
     inputEl.focus();
@@ -518,8 +525,8 @@ function askEmployeeContext() {
     $('empCard').innerHTML = `<p><strong>Description:</strong> ${e.description}</p>
     <p><strong>Memories:</strong></p><ul>${renderMemoryList(e)}</ul>`;
     
-    // Activate chat for this employee
-    state.activeChat = { type: 'employee', person: e };
+    // Activate chat and RESET messages history for this employee
+    state.activeChat = { type: 'employee', person: e, messages: [] };
     toggleChat(true, e.name);
   };
 
@@ -581,8 +588,8 @@ function askApplicantContext() {
     <button id="runContext">Make Decision</button>
     <p class="muted" style="margin-top:1rem;">Or use the Chat panel below to interview the candidate first.</p>`);
 
-  // Activate chat for this applicant
-  state.activeChat = { type: 'applicant', person: a };
+  // Activate chat and setup empty history for this applicant
+  state.activeChat = { type: 'applicant', person: a, messages: [] };
   toggleChat(true, a.name);
 
   $('runContext').onclick = async () => {
@@ -614,9 +621,8 @@ function askApplicantContext() {
     }
 
     render();
-    // Hide chat after decision is made
     toggleChat(false);
-    state.activeChat = { type: null, person: null };
+    state.activeChat = { type: null, person: null, messages: [] };
 
     await generateScene('Applicant Assessment', summary, {
       memoryContext: `Applicant profile: ${a.description}`,
@@ -644,9 +650,8 @@ async function emitCamFrame(cam, frame) {
 }
 
 function askCamContext() {
-  // Hide chat when using cameras
   toggleChat(false);
-  state.activeChat = { type: null, person: null };
+  state.activeChat = { type: null, person: null, messages: [] };
 
   setContextHtml(`<h2>Security Cams</h2>
     <p>Zapp between cameras and stream low-FPS generated frames.</p>
@@ -704,9 +709,8 @@ function askCamContext() {
 async function advanceDay() {
   stopCamStream();
   
-  // Hide chat on new day
   toggleChat(false);
-  state.activeChat = { type: null, person: null };
+  state.activeChat = { type: null, person: null, messages: [] };
 
   state.day += 1;
   const payroll = 550 * state.employees.length;
@@ -728,7 +732,6 @@ async function advanceDay() {
   });
 }
 
-// Bind Action Menu buttons
 document.querySelectorAll('[data-action]').forEach((btn) => { 
   btn.addEventListener('click', async () => { 
     const action = btn.dataset.action; 
@@ -762,7 +765,6 @@ document.querySelectorAll('[data-action]').forEach((btn) => {
   }); 
 });
 
-// Expose debug surface 
 window.appState = state; 
 window.$ = $; 
 window.setContextHtml = function(html) { 
@@ -770,13 +772,11 @@ window.setContextHtml = function(html) {
   if (panel) panel.innerHTML = html; 
 };
 
-// Initialize App and Event Listeners
 document.addEventListener('DOMContentLoaded', () => { 
   try { 
     const saveBtn = $('saveConfig');
     if (saveBtn) saveBtn.addEventListener('click', saveConfig);
     
-    // Setup Chat Events
     const chatBtn = $('sendChat');
     const chatInput = $('chatInput');
     
@@ -787,7 +787,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (chatInput) {
       chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-          e.preventDefault(); // prevent potential form submission
+          e.preventDefault(); 
           sendChatMessage();
         }
       });
