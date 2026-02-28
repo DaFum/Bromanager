@@ -220,8 +220,6 @@ function buildImageUrl(prompt, seed = '-1') {
     width: '1024',
     height: '1024',
     seed,
-    safe: 'false',
-    enhance: 'true',
   });
   return `https://gen.pollinations.ai/image/${encodedPrompt}?${q.toString()}`;
 }
