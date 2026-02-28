@@ -657,9 +657,29 @@ document.querySelectorAll('[data-action]').forEach((btn) => {
   }); 
 });
 
-const saveBtn = $('saveConfig');
-if (saveBtn) saveBtn.addEventListener('click', saveConfig);
-window.addEventListener('beforeunload', stopCamStream);
+// Expose small debug surface to the console so we can inspect state and call helpers 
+window.appState = state; window.$ = $; // expose setContextHtml for manual testing (console / eruda) 
+window.setContextHtml = function(html) { // delegate to internal impl if available 
+  const panel = document.getElementById('contextPanel'); if (panel) panel.innerHTML = html; };
 
+// Attach event handlers and initialize after DOM ready to avoid race conditions. 
+// Wrap in try/catch so any error is visible in UI. 
+document.addEventListener('DOMContentLoaded', () => { 
+  try { 
+    const saveBtn = $('saveConfig');
+    if (saveBtn) saveBtn.addEventListener('click', saveConfig);
+    window.addEventListener('beforeunload', stopCamStream);
+    console.log('app.js: calling render()');
 render();
+
+console.log('app.js: calling setContextHtml()');
 setContextHtml('<h2>Ready</h2><p>Select an action. Character memories, static image directives, and dynamic image generation are active for every scene.</p>');
+
+console.log('app initialized');
+  } catch (err) {
+    console.error('Initialization error', err);
+    const panel = document.getElementById('contextPanel'); 
+    if (panel) panel.innerHTML = <h2>Init-Fehler</h2><pre>${err && err.stack ? err.stack : String(err)}</pre>;
+  } 
+}
+                         );
