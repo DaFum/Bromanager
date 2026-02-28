@@ -15,61 +15,62 @@ const state = {
   streamTimer: null,
   streamFrame: 0,
   lastImageObjectUrl: null, // track blob URL to revoke later
+  activeChat: { type: null, person: null }, // Tracking for the active chat session
   employees: [
-  {
-    name: 'Sienna',
-    role: 'House Madam',
-    morale: 74,
-    trust: 61,
-    stress: 33,
-    description: 'A sharp, authoritative young woman who manages the lineup with a cold eye for profit. She wears a tailored black power-suit with a silk camisole and gold layered necklaces.',
-    memories: ['Reorganized the floor during a surprise high-roller arrival, ensuring every girl was ready in under 5 minutes.'],
-  },
-  {
-    name: 'Maya',
-    role: 'VIP Hostess',
-    morale: 69,
-    trust: 53,
-    stress: 40,
-    description: 'A magnetic, charming young woman specializing in upselling premium bottle service and private upgrades. She is dressed in a bodycon satin dress in champagne with high-heeled sandals.',
-    memories: ['Convinced a disgruntled high-spender to upgrade to a Diamond Suite package after a minor booking delay.'],
-  },
-  {
-    name: 'Jade',
-    role: 'Security Lead',
-    morale: 72,
-    trust: 57,
-    stress: 36,
-    description: 'A fit, intimidating young woman who handles problematic guests before they can cause a scene. She wears a fitted black polo shirt, dark slim-fit tactical trousers, and a discreet earpiece.',
-    memories: ['Handled a rowdy bachelor party by escorting the leader out so quietly the other guests didn\'t notice.'],
-  },
-  {
-    name: 'Chloe',
-    role: 'Booking Agent',
-    morale: 76,
-    trust: 59,
-    stress: 34,
-    description: 'A highly organized young woman who manages the digital Black Book and regular guest preferences. She wears a high-waisted pencil skirt and a crisp white blouse with a sleek, professional bun.',
-    memories: ['Recovered the entire guest database after a system crash, ensuring no sensitive appointments were missed.'],
-  },
-  {
-    name: 'Tessa',
-    role: 'Suite Warden',
-    morale: 71,
-    trust: 56,
-    stress: 37,
-    description: 'A fast-paced, efficient young woman responsible for the rapid sanitization and restocking of private rooms. She wears a functional black wrap-dress with a utility belt for keys and supplies.',
-    memories: ['Prepped the entire VIP wing for a Gold-Member event, maintaining 100% hygiene standards under pressure.'],
-  },
-  {
-    name: 'Elena',
-    role: 'Wellness Lead',
-    morale: 73,
-    trust: 58,
-    stress: 31,
-    description: 'A calm, methodical young woman overseeing staff health checks and strict hygiene compliance. She is dressed in a modern white lab-style tunic over dark leggings.',
-    memories: ['Prevented a potential health-code shutdown by identifying a laundry contamination before it reached the girls.'],
-  },
+    {
+      name: 'Sienna',
+      role: 'House Madam',
+      morale: 74,
+      trust: 61,
+      stress: 33,
+      description: 'A sharp, authoritative young woman who manages the lineup with a cold eye for profit. She wears a tailored black power-suit with a silk camisole and gold layered necklaces.',
+      memories: ['Reorganized the floor during a surprise high-roller arrival, ensuring every girl was ready in under 5 minutes.'],
+    },
+    {
+      name: 'Maya',
+      role: 'VIP Hostess',
+      morale: 69,
+      trust: 53,
+      stress: 40,
+      description: 'A magnetic, charming young woman specializing in upselling premium bottle service and private upgrades. She is dressed in a bodycon satin dress in champagne with high-heeled sandals.',
+      memories: ['Convinced a disgruntled high-spender to upgrade to a Diamond Suite package after a minor booking delay.'],
+    },
+    {
+      name: 'Jade',
+      role: 'Security Lead',
+      morale: 72,
+      trust: 57,
+      stress: 36,
+      description: 'A fit, intimidating young woman who handles problematic guests before they can cause a scene. She wears a fitted black polo shirt, dark slim-fit tactical trousers, and a discreet earpiece.',
+      memories: ['Handled a rowdy bachelor party by escorting the leader out so quietly the other guests didn\'t notice.'],
+    },
+    {
+      name: 'Chloe',
+      role: 'Booking Agent',
+      morale: 76,
+      trust: 59,
+      stress: 34,
+      description: 'A highly organized young woman who manages the digital Black Book and regular guest preferences. She wears a high-waisted pencil skirt and a crisp white blouse with a sleek, professional bun.',
+      memories: ['Recovered the entire guest database after a system crash, ensuring no sensitive appointments were missed.'],
+    },
+    {
+      name: 'Tessa',
+      role: 'Suite Warden',
+      morale: 71,
+      trust: 56,
+      stress: 37,
+      description: 'A fast-paced, efficient young woman responsible for the rapid sanitization and restocking of private rooms. She wears a functional black wrap-dress with a utility belt for keys and supplies.',
+      memories: ['Prepped the entire VIP wing for a Gold-Member event, maintaining 100% hygiene standards under pressure.'],
+    },
+    {
+      name: 'Elena',
+      role: 'Wellness Lead',
+      morale: 73,
+      trust: 58,
+      stress: 31,
+      description: 'A calm, methodical young woman overseeing staff health checks and strict hygiene compliance. She is dressed in a modern white lab-style tunic over dark leggings.',
+      memories: ['Prevented a potential health-code shutdown by identifying a laundry contamination before it reached the girls.'],
+    },
   ],
   cams: [
     {
@@ -98,9 +99,7 @@ const state = {
     },
   ],
   config: {
-    // Store API key in sessionStorage (less persistent)
     apiKey: sessionStorage.getItem('pollinations_api_key') || '',
-    // keep model prefs in localStorage
     textModel: localStorage.getItem('pollinations_text_model') || 'openai-large',
     imageModel: localStorage.getItem('pollinations_image_model') || 'flux',
   },
@@ -125,9 +124,7 @@ function render() {
   if (apiInput) {
     try {
       apiInput.type = 'password';
-    } catch (e) {
-      // ignore
-    }
+    } catch (e) { }
     apiInput.value = state.config.apiKey || '';
   }
   const textInput = $('textModel');
@@ -169,6 +166,7 @@ function setContextHtml(html) {
 }
 
 function appendMemory(employee, memory) {
+  if(!employee.memories) employee.memories = [];
   employee.memories.push(`Day ${state.day}: ${memory}`);
   if (employee.memories.length > 8) employee.memories = employee.memories.slice(-8);
 }
@@ -215,6 +213,7 @@ function randomApplicant() {
   const base = templates[Math.floor(Math.random() * templates.length)];
   return {
     ...base,
+    memories: [], // Applicants start with no memories
     communication: 45 + Math.floor(Math.random() * 51),
     reliability: 45 + Math.floor(Math.random() * 51),
     teamwork: 45 + Math.floor(Math.random() * 51),
@@ -233,16 +232,9 @@ function buildImageUrl(prompt, seed = '-1', includeKey = false) {
   return `https://gen.pollinations.ai/image/${encodedPrompt}?${q.toString()}`;
 }
 
-// Fetch image as blob with Authorization header and return an object URL.
-// If the fetch fails, fallbackUrl parameter will be used (string).
 async function fetchImageAsObjectUrl(prompt, seed = '-1', fallbackUrl = null) {
-  // Revoke previous blob URL to avoid leaks
   if (state.lastImageObjectUrl) {
-    try {
-      URL.revokeObjectURL(state.lastImageObjectUrl);
-    } catch (e) {
-      // ignore
-    }
+    try { URL.revokeObjectURL(state.lastImageObjectUrl); } catch (e) { }
     state.lastImageObjectUrl = null;
   }
 
@@ -255,10 +247,7 @@ async function fetchImageAsObjectUrl(prompt, seed = '-1', fallbackUrl = null) {
   });
   const url = `https://gen.pollinations.ai/image/${encodedPrompt}?${q.toString()}`;
 
-  // If we don't have a key, return fallback URL or the public URL
-  if (!state.config.apiKey) {
-    return fallbackUrl || url;
-  }
+  if (!state.config.apiKey) return fallbackUrl || url;
 
   try {
     const res = await fetch(url, {
@@ -270,10 +259,8 @@ async function fetchImageAsObjectUrl(prompt, seed = '-1', fallbackUrl = null) {
     });
 
     if (!res.ok) {
-      // Fall back to URL-with-key query param if server forbids header-based access
       const fallback = buildImageUrl(prompt, seed, true);
-      if (fallbackUrl) return fallbackUrl;
-      return fallback;
+      return fallbackUrl || fallback;
     }
 
     const blob = await res.blob();
@@ -281,10 +268,7 @@ async function fetchImageAsObjectUrl(prompt, seed = '-1', fallbackUrl = null) {
     state.lastImageObjectUrl = objectUrl;
     return objectUrl;
   } catch (err) {
-    // On network error, fall back to query-param URL exposing the key (if present) or a public URL
-    if (state.config.apiKey) {
-      return buildImageUrl(prompt, seed, true);
-    }
+    if (state.config.apiKey) return buildImageUrl(prompt, seed, true);
     return fallbackUrl || url;
   }
 }
@@ -363,7 +347,6 @@ Ensure image_prompt is directly usable for image generation and perfectly aligne
     imagePrompt = `${staticPromptPack}; dynamic event: ${actionSummary}; memory signals: ${memoryContext}; vivid colors, clear photorealistic lighting, manager POV`;
   }
 
-  // Acquire an image source that can use Authorization header when key is present
   const sceneImageEl = $('sceneImage');
   const sceneUrlEl = $('sceneUrl');
   const scenePromptEl = $('scenePrompt');
@@ -393,7 +376,124 @@ Ensure image_prompt is directly usable for image generation and perfectly aligne
   }
 }
 
+// ---- CHAT SYSTEM LOGIC ----
+function toggleChat(show, personName = '') {
+  const panel = $('chatPanel');
+  if (panel) panel.style.display = show ? 'block' : 'none';
+  if (show) {
+    const header = $('chatHeader');
+    if (header) header.textContent = `Conversation with ${personName}`;
+    const log = $('chatLog');
+    if (log) log.innerHTML = ''; // Clear previous chat
+    const input = $('chatInput');
+    if (input) input.value = '';
+  }
+}
+
+function appendChatMessage(sender, message) {
+  const log = $('chatLog');
+  if (!log) return;
+  const div = document.createElement('div');
+  div.innerHTML = `<strong>${sender}:</strong> ${message}`;
+  div.style.marginBottom = '0.5rem';
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function sendChatMessage() {
+  const inputEl = $('chatInput');
+  const message = inputEl.value.trim();
+  if (!message || !state.activeChat.person) return;
+
+  const person = state.activeChat.person;
+  
+  // Disable input while generating
+  inputEl.disabled = true;
+  const btnEl = $('sendChat');
+  if(btnEl) btnEl.disabled = true;
+
+  appendChatMessage('Manager', message);
+  inputEl.value = '';
+
+  // Prepare character prompt
+  const memoryStr = (person.memories && person.memories.length > 0) ? `Your memories: ${person.memories.join(' | ')}` : '';
+  const statusStr = state.activeChat.type === 'employee' 
+    ? `Your current morale: ${person.morale}, trust: ${person.trust}, stress: ${person.stress}.` 
+    : `You are an applicant.`;
+
+  const systemPrompt = `You are playing the role of ${person.name}, a ${person.role} in a brothel management simulation.
+Your description: ${person.description}
+${statusStr}
+${memoryStr}
+Respond directly in-character to the manager's message. 
+Rules: Keep it short (1 to 3 sentences max). Do NOT use asterisks for actions (e.g. *smiles*). Stay authentic to your role and current state.`;
+
+  // UI Loading state
+  const loadingId = 'loading-' + Date.now();
+  const log = $('chatLog');
+  const loadDiv = document.createElement('div');
+  loadDiv.id = loadingId;
+  loadDiv.style.color = '#888';
+  loadDiv.style.fontStyle = 'italic';
+  loadDiv.innerHTML = `${person.name} is typing...`;
+  log.appendChild(loadDiv);
+  log.scrollTop = log.scrollHeight;
+
+  try {
+    const headers = { 'Content-Type': 'application/json', Accept: 'application/json' };
+    if (state.config.apiKey) headers.Authorization = `Bearer ${state.config.apiKey}`;
+
+    const res = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: state.config.textModel,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: message },
+        ],
+        temperature: 0.7,
+      }),
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const reply = data?.choices?.[0]?.message?.content || '...';
+
+    const lDiv = $(loadingId);
+    if(lDiv) lDiv.remove();
+
+    appendChatMessage(person.name, reply);
+
+    // If employee, save conversation as a short memory
+    if (state.activeChat.type === 'employee') {
+      appendMemory(person, `Chatted with Manager. Discussed: "${message.substring(0, 30)}..."`);
+    }
+
+    // Automatically generate a background scene based on the conversation
+    const sceneType = state.activeChat.type === 'employee' ? 'Employee Conversation' : 'Applicant Assessment';
+    await generateScene(sceneType, `Manager and ${person.name} are talking. Manager said: "${message}"`, {
+      memoryContext: `${person.name} is interacting with management.`,
+      roleContext: `${person.name} (${person.role}) is engaged in a conversation.`,
+      staticPrompt: `character focus: ${person.name}, role: ${person.role}, talking to management, active discussion, looking at camera`,
+    });
+
+  } catch (err) {
+    const lDiv = $(loadingId);
+    if(lDiv) lDiv.remove();
+    appendChatMessage('System', `Connection error: ${err.message}`);
+  } finally {
+    // Re-enable input
+    inputEl.disabled = false;
+    if(btnEl) btnEl.disabled = false;
+    inputEl.focus();
+  }
+}
+// ---- END CHAT SYSTEM ----
+
+
 function renderMemoryList(employee) {
+  if(!employee.memories) return '';
   return employee.memories.map((m) => `<li>${m}</li>`).join('');
 }
 
@@ -404,18 +504,23 @@ function askEmployeeContext() {
       .map((e, i) => `<option value="${i}">${e.name} (${e.role})</option>`)
       .join('')}</select>
     <div id="empCard" class="card"></div>
-    <label for="empAction">Action</label>
+    <label for="empAction">Standard Action</label>
     <select id="empAction">
       <option value="praise">Praise professionalism</option>
       <option value="concerns">Ask for concerns</option>
       <option value="shift">Request extra shift</option>
     </select>
-    <button id="runContext">Run Scene</button>`);
+    <button id="runContext">Run Action Scene</button>
+    <p class="muted" style="margin-top:1rem;">Or use the Chat panel below to talk directly.</p>`);
 
   const updateCard = () => {
     const e = state.employees[Number($('empSelect').value)];
     $('empCard').innerHTML = `<p><strong>Description:</strong> ${e.description}</p>
     <p><strong>Memories:</strong></p><ul>${renderMemoryList(e)}</ul>`;
+    
+    // Activate chat for this employee
+    state.activeChat = { type: 'employee', person: e };
+    toggleChat(true, e.name);
   };
 
   $('empSelect').onchange = updateCard;
@@ -473,7 +578,12 @@ function askApplicantContext() {
       <option value="hold">Hold</option>
       <option value="reject">Reject</option>
     </select>
-    <button id="runContext">Run Scene</button>`);
+    <button id="runContext">Make Decision</button>
+    <p class="muted" style="margin-top:1rem;">Or use the Chat panel below to interview the candidate first.</p>`);
+
+  // Activate chat for this applicant
+  state.activeChat = { type: 'applicant', person: a };
+  toggleChat(true, a.name);
 
   $('runContext').onclick = async () => {
     const d = $('appDecision').value;
@@ -504,6 +614,10 @@ function askApplicantContext() {
     }
 
     render();
+    // Hide chat after decision is made
+    toggleChat(false);
+    state.activeChat = { type: null, person: null };
+
     await generateScene('Applicant Assessment', summary, {
       memoryContext: `Applicant profile: ${a.description}`,
       roleContext: `Candidate role target: ${a.role}. Show interview context and role-specific signals of competence.`,
@@ -530,6 +644,10 @@ async function emitCamFrame(cam, frame) {
 }
 
 function askCamContext() {
+  // Hide chat when using cameras
+  toggleChat(false);
+  state.activeChat = { type: null, person: null };
+
   setContextHtml(`<h2>Security Cams</h2>
     <p>Zapp between cameras and stream low-FPS generated frames.</p>
     <label for="camSelect">Camera</label>
@@ -585,6 +703,11 @@ function askCamContext() {
 
 async function advanceDay() {
   stopCamStream();
+  
+  // Hide chat on new day
+  toggleChat(false);
+  state.activeChat = { type: null, person: null };
+
   state.day += 1;
   const payroll = 550 * state.employees.length;
   const revenue = 2800 + Math.floor(Math.random() * 2501);
@@ -605,51 +728,31 @@ async function advanceDay() {
   });
 }
 
+// Bind Action Menu buttons
 document.querySelectorAll('[data-action]').forEach((btn) => { 
   btn.addEventListener('click', async () => { 
     const action = btn.dataset.action; 
     try { 
-      // stop streaming unless user opened cams 
       if (action !== 'cams') stopCamStream();
+      
       if (action === 'talk') {
-        // Safety wrapper — show errors in the context panel if something fails
-        try {
-          askEmployeeContext();
-        } catch (err) {
-          console.error('askEmployeeContext error', err);
-          setContextHtml(`<h2>Fehler beim Laden</h2><p>askEmployeeContext schlug fehl:</p><pre>${(err && err.stack) ? err.stack : String(err)}</pre>`);
-        }
+        askEmployeeContext();
         return;
       }
 
       if (action === 'assess') {
-        try {
-          askApplicantContext();
-        } catch (err) {
-          console.error('askApplicantContext error', err);
-          setContextHtml(`<h2>Fehler beim Laden</h2><p>askApplicantContext schlug fehl:</p><pre>${(err && err.stack) ? err.stack : String(err)}</pre>`);
-        }
+        askApplicantContext();
         return;
       }
 
       if (action === 'cams') {
-        try {
-          askCamContext();
-        } catch (err) {
-          console.error('askCamContext error', err);
-          setContextHtml(`<h2>Fehler beim Laden</h2><p>askCamContext schlug fehl:</p><pre>${(err && err.stack) ? err.stack : String(err)}</pre>`);
-        }
+        askCamContext();
         return;
       }
 
       if (action === 'next') {
         setContextHtml('<h2>End of Day</h2><p>Daily payroll/revenue calculations applied and memories updated for all staff.</p>');
-        try {
-          await advanceDay();
-        } catch (err) {
-          console.error('advanceDay error', err);
-          setContextHtml(`<h2>Fehler beim Fortschritt</h2><pre>${(err && err.stack) ? err.stack : String(err)}</pre>`);
-        }
+        await advanceDay();
         return;
       }
     } catch (err) {
@@ -659,34 +762,46 @@ document.querySelectorAll('[data-action]').forEach((btn) => {
   }); 
 });
 
-// Expose small debug surface to the console so we can inspect state and call helpers 
+// Expose debug surface 
 window.appState = state; 
 window.$ = $; 
-
-// expose setContextHtml for manual testing (console / eruda) 
 window.setContextHtml = function(html) { 
-  // delegate to internal impl if available 
-  const panel = document.getElementById('contextPanel'); 
+  const panel = $('contextPanel'); 
   if (panel) panel.innerHTML = html; 
 };
 
-// Attach event handlers and initialize after DOM ready to avoid race conditions. 
-// Wrap in try/catch so any error is visible in UI. 
+// Initialize App and Event Listeners
 document.addEventListener('DOMContentLoaded', () => { 
   try { 
     const saveBtn = $('saveConfig');
     if (saveBtn) saveBtn.addEventListener('click', saveConfig);
+    
+    // Setup Chat Events
+    const chatBtn = $('sendChat');
+    const chatInput = $('chatInput');
+    
+    if (chatBtn) {
+      chatBtn.addEventListener('click', sendChatMessage);
+    }
+    
+    if (chatInput) {
+      chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault(); // prevent potential form submission
+          sendChatMessage();
+        }
+      });
+    }
+
     window.addEventListener('beforeunload', stopCamStream);
-    console.log('app.js: calling render()');
+    
     render();
-
-    console.log('app.js: calling setContextHtml()');
     setContextHtml('<h2>Ready</h2><p>Select an action. Character memories, static image directives, and dynamic image generation are active for every scene.</p>');
+    console.log('App initialized fully.');
 
-    console.log('app initialized');
   } catch (err) {
     console.error('Initialization error', err);
-    const panel = document.getElementById('contextPanel'); 
+    const panel = $('contextPanel'); 
     if (panel) panel.innerHTML = `<h2>Init-Fehler</h2><pre>${err && err.stack ? err.stack : String(err)}</pre>`;
   } 
 });
