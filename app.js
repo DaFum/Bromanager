@@ -41,7 +41,7 @@ const state = {
     trust: 57,
     stress: 36,
     description: 'A fit, intimidating young woman who handles problematic guests before they can cause a scene. She wears a fitted black polo shirt, dark slim-fit tactical trousers, and a discreet earpiece.',
-    memories: ['Handled a rowdy bachelor party by escorting the leader out so quietly the other guests didn't notice.'],
+    memories: ['Handled a rowdy bachelor party by escorting the leader out so quietly the other guests didn\'t notice.'],
   },
   {
     name: 'Chloe',
@@ -607,59 +607,86 @@ async function advanceDay() {
 
 document.querySelectorAll('[data-action]').forEach((btn) => { 
   btn.addEventListener('click', async () => { 
-    const action = btn.dataset.action; try { // stop streaming unless user opened cams 
+    const action = btn.dataset.action; 
+    try { 
+      // stop streaming unless user opened cams 
       if (action !== 'cams') stopCamStream();
-        if (action === 'talk') {
-    // Safety wrapper — show errors in the context panel if something fails
-    try {
-      askEmployeeContext();
-    } catch (err) {
-      console.error('askEmployeeContext error', err);
-      setContextHtml(`<h2>Fehler beim Laden</h2><p>askEmployeeContext schlug fehl:</p><pre>${(err && err.stack) ? err.stack : String(err)}</pre>`);
-    }
-    return;
-  }
+      if (action === 'talk') {
+        // Safety wrapper — show errors in the context panel if something fails
+        try {
+          askEmployeeContext();
+        } catch (err) {
+          console.error('askEmployeeContext error', err);
+          setContextHtml(`<h2>Fehler beim Laden</h2><p>askEmployeeContext schlug fehl:</p><pre>${(err && err.stack) ? err.stack : String(err)}</pre>`);
+        }
+        return;
+      }
 
-  if (action === 'assess') {
-    try {
-      askApplicantContext();
-    } catch (err) {
-      console.error('askApplicantContext error', err);
-      setContextHtml(`<h2>Fehler beim Laden</h2><p>askApplicantContext schlug fehl:</p><pre>${(err && err.stack) ? err.stack : String(err)}</pre>`);
-    }
-    return;
-  }
+      if (action === 'assess') {
+        try {
+          askApplicantContext();
+        } catch (err) {
+          console.error('askApplicantContext error', err);
+          setContextHtml(`<h2>Fehler beim Laden</h2><p>askApplicantContext schlug fehl:</p><pre>${(err && err.stack) ? err.stack : String(err)}</pre>`);
+        }
+        return;
+      }
 
-  if (action === 'cams') {
-    try {
-      askCamContext();
-    } catch (err) {
-      console.error('askCamContext error', err);
-      setContextHtml(`<h2>Fehler beim Laden</h2><p>askCamContext schlug fehl:</p><pre>${(err && err.stack) ? err.stack : String(err)}</pre>`);
-    }
-    return;
-  }
+      if (action === 'cams') {
+        try {
+          askCamContext();
+        } catch (err) {
+          console.error('askCamContext error', err);
+          setContextHtml(`<h2>Fehler beim Laden</h2><p>askCamContext schlug fehl:</p><pre>${(err && err.stack) ? err.stack : String(err)}</pre>`);
+        }
+        return;
+      }
 
-  if (action === 'next') {
-    setContextHtml('<h2>End of Day</h2><p>Daily payroll/revenue calculations applied and memories updated for all staff.</p>');
-    try {
-      await advanceDay();
+      if (action === 'next') {
+        setContextHtml('<h2>End of Day</h2><p>Daily payroll/revenue calculations applied and memories updated for all staff.</p>');
+        try {
+          await advanceDay();
+        } catch (err) {
+          console.error('advanceDay error', err);
+          setContextHtml(`<h2>Fehler beim Fortschritt</h2><pre>${(err && err.stack) ? err.stack : String(err)}</pre>`);
+        }
+        return;
+      }
     } catch (err) {
-      console.error('advanceDay error', err);
-      setContextHtml(`<h2>Fehler beim Fortschritt</h2><pre>${(err && err.stack) ? err.stack : String(err)}</pre>`);
-    }
-    return;
-  }
-} catch (err) {
-  console.error('Unhandled action handler error', err);
-  setContextHtml(`<h2>Unerwarteter Fehler</h2><pre>${(err && err.stack) ? err.stack : String(err)}</pre>`);
+      console.error('Unhandled action handler error', err);
+      setContextHtml(`<h2>Unerwarteter Fehler</h2><pre>${(err && err.stack) ? err.stack : String(err)}</pre>`);
     }
   }); 
 });
 
-const saveBtn = $('saveConfig');
-if (saveBtn) saveBtn.addEventListener('click', saveConfig);
-window.addEventListener('beforeunload', stopCamStream);
+// Expose small debug surface to the console so we can inspect state and call helpers 
+window.appState = state; 
+window.$ = $; 
 
-render();
-setContextHtml('<h2>Ready</h2><p>Select an action. Character memories, static image directives, and dynamic image generation are active for every scene.</p>');
+// expose setContextHtml for manual testing (console / eruda) 
+window.setContextHtml = function(html) { 
+  // delegate to internal impl if available 
+  const panel = document.getElementById('contextPanel'); 
+  if (panel) panel.innerHTML = html; 
+};
+
+// Attach event handlers and initialize after DOM ready to avoid race conditions. 
+// Wrap in try/catch so any error is visible in UI. 
+document.addEventListener('DOMContentLoaded', () => { 
+  try { 
+    const saveBtn = $('saveConfig');
+    if (saveBtn) saveBtn.addEventListener('click', saveConfig);
+    window.addEventListener('beforeunload', stopCamStream);
+    console.log('app.js: calling render()');
+    render();
+
+    console.log('app.js: calling setContextHtml()');
+    setContextHtml('<h2>Ready</h2><p>Select an action. Character memories, static image directives, and dynamic image generation are active for every scene.</p>');
+
+    console.log('app initialized');
+  } catch (err) {
+    console.error('Initialization error', err);
+    const panel = document.getElementById('contextPanel'); 
+    if (panel) panel.innerHTML = `<h2>Init-Fehler</h2><pre>${err && err.stack ? err.stack : String(err)}</pre>`;
+  } 
+});
