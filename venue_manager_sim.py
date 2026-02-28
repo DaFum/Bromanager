@@ -67,8 +67,8 @@ class SceneOutput:
 class PollinationsClient:
     api_key: Optional[str]
     base_url: str = "https://gen.pollinations.ai"
-    text_model: str = "openai-large"
-    image_model: str = "flux"
+    text_model: str = "mistral"
+    image_model: str = "zimage"
     image_width: int = 1024
     image_height: int = 1024
     temperature: float = 0.8
