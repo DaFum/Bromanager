@@ -97,7 +97,9 @@ const state = {
     },
   ],
   config: {
-    apiKey: localStorage.getItem('pollinations_api_key') || '',
+    // Use sessionStorage for the API key (less persistent than localStorage).
+    apiKey: sessionStorage.getItem('pollinations_api_key') || '',
+    // keep model prefs in localStorage
     textModel: localStorage.getItem('pollinations_text_model') || 'openai-large',
     imageModel: localStorage.getItem('pollinations_image_model') || 'flux',
   },
@@ -113,18 +115,37 @@ function render() {
       </div>`
     )
     .join('');
-  $('apiKey').value = state.config.apiKey;
-  $('textModel').value = state.config.textModel;
-  $('imageModel').value = state.config.imageModel;
+  // if apiKey input exists, set as password input and populate current key (masked by browser)
+  const apiInput = $('apiKey');
+  if (apiInput) {
+    try {
+      apiInput.type = 'password';
+    } catch (e) {
+      // ignore if input type cannot be changed
+    }
+    apiInput.value = state.config.apiKey || '';
+  }
+  const textInput = $('textModel');
+  if (textInput) textInput.value = state.config.textModel;
+  const imageInput = $('imageModel');
+  if (imageInput) imageInput.value = state.config.imageModel;
 }
 
 function saveConfig() {
-  state.config.apiKey = $('apiKey').value.trim();
+  // Read values from inputs and persist models to localStorage; API key stored to sessionStorage only.
+  const keyInput = $('apiKey');
+  state.config.apiKey = keyInput ? keyInput.value.trim() : '';
   state.config.textModel = $('textModel').value.trim() || 'openai-large';
   state.config.imageModel = $('imageModel').value.trim() || 'flux';
-  localStorage.setItem('pollinations_api_key', state.config.apiKey);
+
+  if (state.config.apiKey) {
+    sessionStorage.setItem('pollinations_api_key', state.config.apiKey);
+  } else {
+    sessionStorage.removeItem('pollinations_api_key');
+  }
   localStorage.setItem('pollinations_text_model', state.config.textModel);
   localStorage.setItem('pollinations_image_model', state.config.imageModel);
+
   $('configStatus').textContent = 'Configuration saved.';
   setTimeout(() => ($('configStatus').textContent = ''), 1800);
 }
@@ -248,6 +269,7 @@ Ensure image_prompt is directly usable for image generation and perfectly aligne
 
   try {
     const headers = { 'Content-Type': 'application/json', Accept: 'application/json' };
+    // Apply Pollinations Bearer token if provided (as confirmed in docs)
     if (state.config.apiKey) headers.Authorization = `Bearer ${state.config.apiKey}`;
 
     const res = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
@@ -514,7 +536,8 @@ document.querySelectorAll('[data-action]').forEach((btn) => {
   });
 });
 
-$('saveConfig').addEventListener('click', saveConfig);
+const saveBtn = $('saveConfig');
+if (saveBtn) saveBtn.addEventListener('click', saveConfig);
 window.addEventListener('beforeunload', stopCamStream);
 
 render();
