@@ -1,10 +1,10 @@
 const $ = (id) => document.getElementById(id);
 
 const STATIC_PROMPTS = {
-  global: 'clear visual style, bright balanced lighting, vivid full-color photorealistic rendering, adult-only venue operations, high detail, clean composition',
-  employee: 'medium shot portrait + workplace background, expressive face, practical uniforms, role-authentic tools, story-rich environment, soft film grain',
-  applicant: 'interview desk composition, dossier props, neutral posture, professional mood, realistic skin tones and shadows',
-  security: 'CCTV aesthetic, timestamp overlay style, wide-angle distortion, surveillance framing, low-fps still-frame vibe',
+  global: 'clear visual style, bright balanced lighting, vivid full-color photorealistic rendering, adult-only brothel operations, high detail, clean composition',
+  employee: 'medium shot portrait + workplace background, expressive face, fitting clothes, role-authentic tools, story-rich environment, photorealistic',
+  applicant: 'interview desk composition, dossier props, neutral posture, fitting mood, realistic skin tones and shadows',
+  security: 'perfect quality, timestamp overlay style, wide-angle, realistic, low-fps still-frame vibe',
   summary: 'manager office with organized paperwork and monitor wall, clear daylight-balanced light, photorealistic color grading',
 };
 
@@ -14,61 +14,62 @@ const state = {
   reputation: 58,
   streamTimer: null,
   streamFrame: 0,
+  lastImageObjectUrl: null, // track blob URL to revoke later
   employees: [
-    {
-      name: 'Mila',
-      role: 'Operations Supervisor',
-      morale: 74,
-      trust: 61,
-      stress: 33,
-      description: 'Calm, observant operations supervisor with strong conflict de-escalation instincts and excellent guest flow orchestration.',
-      memories: ['Took charge during a peak-hour staffing shortage and stabilized service in 12 minutes.'],
-    },
-    {
-      name: 'Jordan',
-      role: 'Hospitality Mixologist',
-      morale: 69,
-      trust: 53,
-      stress: 40,
-      description: 'Fast and precise hospitality mixologist known for service consistency, inventory discipline, and guest communication.',
-      memories: ['Volunteered to train a new barback and improved prep speed for the team.'],
-    },
-    {
-      name: 'Rin',
-      role: 'Security Lead',
-      morale: 72,
-      trust: 57,
-      stress: 36,
-      description: 'Security lead with sharp situational awareness, calm communication, and policy-first escalation habits.',
-      memories: ['Handled an entrance line dispute professionally without operational slowdown.'],
-    },
-    {
-      name: 'Kai',
-      role: 'Client Relations Concierge',
-      morale: 76,
-      trust: 59,
-      stress: 34,
-      description: 'Client-relations concierge with excellent recall of regular guests and highly organized booking notes.',
-      memories: ['Recovered a double-booking error by reassigning rooms without guest complaints.'],
-    },
-    {
-      name: 'Selene',
-      role: 'Private Suite Steward',
-      morale: 71,
-      trust: 56,
-      stress: 37,
-      description: 'Private-suite steward focused on room turnover quality, guest comfort standards, and discreet service logistics.',
-      memories: ['Prepared all premium suites ahead of schedule during a high-demand evening.'],
-    },
-    {
-      name: 'Omar',
-      role: 'Housekeeping & Hygiene Lead',
-      morale: 73,
-      trust: 58,
-      stress: 31,
-      description: 'Hygiene lead ensuring sanitation, laundry flow, and compliance checklists across all guest and staff areas.',
-      memories: ['Introduced a revised sanitation checklist that reduced reset times between bookings.'],
-    },
+  {
+    name: 'Sienna',
+    role: 'House Madam',
+    morale: 74,
+    trust: 61,
+    stress: 33,
+    description: 'A sharp, authoritative young woman who manages the lineup with a cold eye for profit. She wears a tailored black power-suit with a silk camisole and gold layered necklaces.',
+    memories: ['Reorganized the floor during a surprise high-roller arrival, ensuring every girl was ready in under 5 minutes.'],
+  },
+  {
+    name: 'Maya',
+    role: 'VIP Hostess',
+    morale: 69,
+    trust: 53,
+    stress: 40,
+    description: 'A magnetic, charming young woman specializing in upselling premium bottle service and private upgrades. She is dressed in a bodycon satin dress in champagne with high-heeled sandals.',
+    memories: ['Convinced a disgruntled high-spender to upgrade to a Diamond Suite package after a minor booking delay.'],
+  },
+  {
+    name: 'Jade',
+    role: 'Security Lead',
+    morale: 72,
+    trust: 57,
+    stress: 36,
+    description: 'A fit, intimidating young woman who handles problematic guests before they can cause a scene. She wears a fitted black polo shirt, dark slim-fit tactical trousers, and a discreet earpiece.',
+    memories: ['Handled a rowdy bachelor party by escorting the leader out so quietly the other guests didn't notice.'],
+  },
+  {
+    name: 'Chloe',
+    role: 'Booking Agent',
+    morale: 76,
+    trust: 59,
+    stress: 34,
+    description: 'A highly organized young woman who manages the digital Black Book and regular guest preferences. She wears a high-waisted pencil skirt and a crisp white blouse with a sleek, professional bun.',
+    memories: ['Recovered the entire guest database after a system crash, ensuring no sensitive appointments were missed.'],
+  },
+  {
+    name: 'Tessa',
+    role: 'Suite Warden',
+    morale: 71,
+    trust: 56,
+    stress: 37,
+    description: 'A fast-paced, efficient young woman responsible for the rapid sanitization and restocking of private rooms. She wears a functional black wrap-dress with a utility belt for keys and supplies.',
+    memories: ['Prepped the entire VIP wing for a Gold-Member event, maintaining 100% hygiene standards under pressure.'],
+  },
+  {
+    name: 'Elena',
+    role: 'Wellness Lead',
+    morale: 73,
+    trust: 58,
+    stress: 31,
+    description: 'A calm, methodical young woman overseeing staff health checks and strict hygiene compliance. She is dressed in a modern white lab-style tunic over dark leggings.',
+    memories: ['Prevented a potential health-code shutdown by identifying a laundry contamination before it reached the girls.'],
+  },
   ],
   cams: [
     {
@@ -90,14 +91,14 @@ const state = {
       staticPrompt: 'private corridor with access doors, low-key lighting, carpet texture, quiet monitored zone',
     },
     {
-      id: 'back_office',
-      location: 'Back Office',
-      status: 'inventory and staffing review',
-      staticPrompt: 'back-office desk with logs and monitor wall, coffee cups, scheduling boards, utilitarian fluorescent lighting',
+      id: 'worker room',
+      location: 'Worker Room',
+      status: 'room used by the girls to proceed sex work',
+      staticPrompt: 'room for sex worker, Girl on bed alone or with Client or girl stripping, utilitarian fluorescent lighting',
     },
   ],
   config: {
-    // Use sessionStorage for the API key (less persistent than localStorage).
+    // Store API key in sessionStorage (less persistent)
     apiKey: sessionStorage.getItem('pollinations_api_key') || '',
     // keep model prefs in localStorage
     textModel: localStorage.getItem('pollinations_text_model') || 'openai-large',
@@ -106,22 +107,26 @@ const state = {
 };
 
 function render() {
-  $('statsLine').textContent = `Day ${state.day} · Cash $${state.cash} · Reputation ${state.reputation}`;
-  $('teamList').innerHTML = state.employees
-    .map(
-      (e) => `<div class="emp">
+  const stats = $('statsLine');
+  if (stats) stats.textContent = `Day ${state.day} · Cash $${state.cash} · Reputation ${state.reputation}`;
+  const teamList = $('teamList');
+  if (teamList) {
+    teamList.innerHTML = state.employees
+      .map(
+        (e) => `<div class="emp">
         <strong>${e.name}</strong> (${e.role}) · morale ${e.morale}, trust ${e.trust}, stress ${e.stress}
         <div class="muted">${e.description}</div>
       </div>`
-    )
-    .join('');
-  // if apiKey input exists, set as password input and populate current key (masked by browser)
+      )
+      .join('');
+  }
+
   const apiInput = $('apiKey');
   if (apiInput) {
     try {
       apiInput.type = 'password';
     } catch (e) {
-      // ignore if input type cannot be changed
+      // ignore
     }
     apiInput.value = state.config.apiKey || '';
   }
@@ -132,7 +137,6 @@ function render() {
 }
 
 function saveConfig() {
-  // Read values from inputs and persist models to localStorage; API key stored to sessionStorage only.
   const keyInput = $('apiKey');
   state.config.apiKey = keyInput ? keyInput.value.trim() : '';
   state.config.textModel = $('textModel').value.trim() || 'openai-large';
@@ -146,8 +150,11 @@ function saveConfig() {
   localStorage.setItem('pollinations_text_model', state.config.textModel);
   localStorage.setItem('pollinations_image_model', state.config.imageModel);
 
-  $('configStatus').textContent = 'Configuration saved.';
-  setTimeout(() => ($('configStatus').textContent = ''), 1800);
+  const status = $('configStatus');
+  if (status) {
+    status.textContent = 'Configuration saved.';
+    setTimeout(() => (status.textContent = ''), 1800);
+  }
 }
 
 function stateSummary() {
@@ -157,7 +164,8 @@ function stateSummary() {
 }
 
 function setContextHtml(html) {
-  $('contextPanel').innerHTML = html;
+  const panel = $('contextPanel');
+  if (panel) panel.innerHTML = html;
 }
 
 function appendMemory(employee, memory) {
@@ -168,40 +176,40 @@ function appendMemory(employee, memory) {
 function randomApplicant() {
   const templates = [
     {
-      name: 'Avery',
-      role: 'Guest Experience Host',
-      description: 'Confident greeter with queue management experience and excellent composure under pressure.',
-      staticPrompt: 'candidate portrait in reception area, clipboard, welcoming posture, practical ambient lighting',
+      name: 'Lizzy',
+      role: 'Callgirl',
+      description: 'Confident Callgirl with little experience but excellent work under pressure.',
+      staticPrompt: 'callgirl Lizzy waiting in reception area, lingerie, sitting or standing, nice ambient lighting',
     },
     {
-      name: 'Noor',
-      role: 'Client Relations Concierge',
-      description: 'Detail-oriented concierge candidate focused on scheduling precision and guest preference tracking.',
-      staticPrompt: 'concierge interview setup, desk lamp, tablet schedule interface, polished photorealistic color rendering',
+      name: 'Nele',
+      role: 'Sex worker',
+      description: 'Nele, she is a detail-oriented sex worker focused on scheduling precision and guest preference.',
+      staticPrompt: 'sex worker Nele stands infront, interview setup, desk lamp, couch and carpets, polished photorealistic color rendering',
     },
     {
       name: 'Casey',
       role: 'Security Lead',
-      description: 'Policy-driven security candidate with incident logging discipline and communication-first style.',
-      staticPrompt: 'security candidate interview, uniform concept, risk assessment clipboard, neutral office lighting',
+      description: 'Policy-driven security candidate with incident logging discipline and sexy style.',
+      staticPrompt: 'sexy security candidate interview, Casey wearing short uniform concept, risk assessment clipboard, neutral office lighting',
     },
     {
-      name: 'Sami',
+      name: 'Samira',
       role: 'Hospitality Mixologist',
-      description: 'High-throughput bartender profile with attention to hygiene and inventory control.',
-      staticPrompt: 'bartender candidate at service counter, bottles and tools arranged, controlled photorealistic depth of field',
+      description: 'Young Samira a High-throughput bartender wearing miniskirt and crop top with attention to hygiene and inventory control.',
+      staticPrompt: 'bartender candidate at service counter wearing miniskirt and crop top, bottles and tools arranged, controlled photorealistic depth of field',
     },
     {
       name: 'Rhea',
       role: 'Private Suite Steward',
-      description: 'Suite-service candidate trained in room preparation, guest amenity standards, and discreet operational etiquette.',
-      staticPrompt: 'suite attendant interview context, linen carts, amenity checklist, polished photorealistic color rendering',
+      description: 'Suite-service candidate Rhea, she is trained in room preparation, guest amenity standards, and discreet operational etiquette.',
+      staticPrompt: 'Rhea wearing miniskirt, suite attendant interview context, linen carts, amenity checklist, polished photorealistic color rendering',
     },
     {
-      name: 'Diego',
+      name: 'Bibby',
       role: 'Housekeeping & Hygiene Lead',
-      description: 'Facility-care candidate experienced in sanitation protocols, laundry workflows, and quality audits.',
-      staticPrompt: 'operations hygiene interview, checklist clipboard, utility corridor context, clear photorealistic detail',
+      description: 'Bibby, a young Facility-care candidate experienced in sanitation protocols, laundry workflows, and quality audits.',
+      staticPrompt: 'Bibby, young woman in short miniskirt, operations hygiene interview, checklist clipboard, utility corridor context, clear photorealistic detail',
     },
   ];
   const base = templates[Math.floor(Math.random() * templates.length)];
@@ -213,7 +221,7 @@ function randomApplicant() {
   };
 }
 
-function buildImageUrl(prompt, seed = '-1') {
+function buildImageUrl(prompt, seed = '-1', includeKey = false) {
   const encodedPrompt = encodeURIComponent(prompt);
   const q = new URLSearchParams({
     model: state.config.imageModel,
@@ -221,7 +229,64 @@ function buildImageUrl(prompt, seed = '-1') {
     height: '1024',
     seed,
   });
+  if (includeKey && state.config.apiKey) q.set('key', state.config.apiKey);
   return `https://gen.pollinations.ai/image/${encodedPrompt}?${q.toString()}`;
+}
+
+// Fetch image as blob with Authorization header and return an object URL.
+// If the fetch fails, fallbackUrl parameter will be used (string).
+async function fetchImageAsObjectUrl(prompt, seed = '-1', fallbackUrl = null) {
+  // Revoke previous blob URL to avoid leaks
+  if (state.lastImageObjectUrl) {
+    try {
+      URL.revokeObjectURL(state.lastImageObjectUrl);
+    } catch (e) {
+      // ignore
+    }
+    state.lastImageObjectUrl = null;
+  }
+
+  const encodedPrompt = encodeURIComponent(prompt);
+  const q = new URLSearchParams({
+    model: state.config.imageModel,
+    width: '1024',
+    height: '1024',
+    seed,
+  });
+  const url = `https://gen.pollinations.ai/image/${encodedPrompt}?${q.toString()}`;
+
+  // If we don't have a key, return fallback URL or the public URL
+  if (!state.config.apiKey) {
+    return fallbackUrl || url;
+  }
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${state.config.apiKey}`,
+        Accept: 'image/*',
+      },
+    });
+
+    if (!res.ok) {
+      // Fall back to URL-with-key query param if server forbids header-based access
+      const fallback = buildImageUrl(prompt, seed, true);
+      if (fallbackUrl) return fallbackUrl;
+      return fallback;
+    }
+
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    state.lastImageObjectUrl = objectUrl;
+    return objectUrl;
+  } catch (err) {
+    // On network error, fall back to query-param URL exposing the key (if present) or a public URL
+    if (state.config.apiKey) {
+      return buildImageUrl(prompt, seed, true);
+    }
+    return fallbackUrl || url;
+  }
 }
 
 function composeStaticPrompt(sceneType, extra = '') {
@@ -267,7 +332,6 @@ Ensure image_prompt is directly usable for image generation and perfectly aligne
 
   try {
     const headers = { 'Content-Type': 'application/json', Accept: 'application/json' };
-    // Apply Pollinations Bearer token if provided (as confirmed in docs)
     if (state.config.apiKey) headers.Authorization = `Bearer ${state.config.apiKey}`;
 
     const res = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
@@ -299,13 +363,34 @@ Ensure image_prompt is directly usable for image generation and perfectly aligne
     imagePrompt = `${staticPromptPack}; dynamic event: ${actionSummary}; memory signals: ${memoryContext}; vivid colors, clear photorealistic lighting, manager POV`;
   }
 
-  const imageUrl = buildImageUrl(imagePrompt, options.seed || '-1');
-  $('sceneModel').textContent = modelUsed;
-  $('sceneText').textContent = sceneText;
-  $('scenePrompt').textContent = imagePrompt;
-  $('sceneUrl').href = imageUrl;
-  $('sceneUrl').textContent = imageUrl;
-  $('sceneImage').src = imageUrl;
+  // Acquire an image source that can use Authorization header when key is present
+  const sceneImageEl = $('sceneImage');
+  const sceneUrlEl = $('sceneUrl');
+  const scenePromptEl = $('scenePrompt');
+  const sceneTextEl = $('sceneText');
+  const sceneModelEl = $('sceneModel');
+
+  if (sceneModelEl) sceneModelEl.textContent = modelUsed;
+  if (sceneTextEl) sceneTextEl.textContent = sceneText;
+  if (scenePromptEl) scenePromptEl.textContent = imagePrompt;
+
+  const seed = options.seed || '-1';
+  const fallbackPublicUrl = buildImageUrl(imagePrompt, seed, false);
+
+  let imgSrc;
+  try {
+    imgSrc = await fetchImageAsObjectUrl(imagePrompt, seed, fallbackPublicUrl);
+  } catch (err) {
+    imgSrc = state.config.apiKey ? buildImageUrl(imagePrompt, seed, true) : fallbackPublicUrl;
+  }
+
+  if (sceneUrlEl) {
+    sceneUrlEl.href = imgSrc;
+    sceneUrlEl.textContent = imgSrc;
+  }
+  if (sceneImageEl) {
+    sceneImageEl.src = imgSrc;
+  }
 }
 
 function renderMemoryList(employee) {
