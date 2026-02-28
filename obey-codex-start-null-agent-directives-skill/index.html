@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brothel Manager Simulation - Web</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="texture"></div>
+  <main class="app">
+    <header class="panel hero reveal r1">
+      <p class="eyebrow">Ops Console · Color Photoreal Mode</p>
+      <h1>Brothel Manager Simulation</h1>
+      <p>Memory-driven management simulation with Pollinations JSON text generation and vivid photorealistic image scenes.</p>
+    </header>
+
+    <section class="panel reveal r2">
+      <h2>Configuration</h2>
+      <div class="row">
+        <label for="apiKey">Pollinations API Key (optional)</label>
+        <input id="apiKey" type="password" placeholder="sk_..." />
+      </div>
+      <div class="row two-col">
+        <div>
+          <label for="textModel">Text model</label>
+          <input id="textModel" type="text" value="openai-large" />
+        </div>
+        <div>
+          <label for="imageModel">Image model</label>
+          <input id="imageModel" type="text" value="flux" />
+        </div>
+      </div>
+      <button id="saveConfig">Save Config</button>
+      <small id="configStatus"></small>
+    </section>
+
+    <section class="panel stats reveal r3">
+      <h2>Dashboard</h2>
+      <p id="statsLine"></p>
+      <div id="teamList"></div>
+    </section>
+
+    <section class="panel actions reveal r4">
+      <h2>Actions</h2>
+      <div class="buttons">
+        <button data-action="talk">Talk to Employee</button>
+        <button data-action="assess">Assess Applicant</button>
+        <button data-action="cams">Watch Security Cams</button>
+        <button data-action="next">Advance Day</button>
+      </div>
+    </section>
+
+    <section class="panel reveal r5" id="contextPanel"></section>
+
+    <section class="panel scene reveal r6">
+      <h2>Generated Scene</h2>
+      <p><strong>Model:</strong> <span id="sceneModel">-</span></p>
+      <p id="sceneText">Run an action to generate scene text and image prompt.</p>
+      <details>
+        <summary>Image Prompt</summary>
+        <pre id="scenePrompt"></pre>
+      </details>
+      <p><a id="sceneUrl" href="#" target="_blank" rel="noopener">Open image in new tab</a></p>
+      <img id="sceneImage" alt="Generated scene" />
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

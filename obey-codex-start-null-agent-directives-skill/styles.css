@@ -1,0 +1,170 @@
+:root {
+  --bg-base: #080a0f;
+  --bg-deep: #121521;
+  --panel: rgba(14, 19, 33, 0.88);
+  --panel-strong: rgba(22, 28, 46, 0.93);
+  --line: rgba(255, 196, 112, 0.34);
+  --text: #f9e8cd;
+  --muted: #c7b08a;
+  --accent: #ffb048;
+  --accent-cool: #69d2ff;
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Fraunces", serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 8% 12%, rgba(255, 170, 85, 0.24), transparent 32%),
+    radial-gradient(circle at 86% 20%, rgba(105, 210, 255, 0.2), transparent 28%),
+    radial-gradient(circle at 65% 85%, rgba(255, 130, 70, 0.16), transparent 35%),
+    linear-gradient(145deg, var(--bg-base) 0%, var(--bg-deep) 52%, #0c1328 100%);
+}
+
+.texture {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.1;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,.06) 4px),
+    repeating-linear-gradient(90deg, transparent, transparent 5px, rgba(255,255,255,.05) 6px);
+}
+
+.app {
+  position: relative;
+  max-width: 1060px;
+  margin: 1.2rem auto 3rem;
+  padding: 0 1rem;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 1rem;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(6px);
+}
+
+.hero {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, rgba(30, 25, 22, 0.88), rgba(18, 28, 46, 0.92));
+}
+
+.eyebrow {
+  margin: 0;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  font-size: .72rem;
+  color: var(--accent-cool);
+}
+
+h1, h2 {
+  margin-top: .2rem;
+  font-family: "Cinzel", serif;
+  letter-spacing: 0.04em;
+}
+
+h1 {
+  font-size: clamp(1.9rem, 4vw, 3rem);
+  margin-bottom: .4rem;
+}
+
+h2 { margin-bottom: .6rem; }
+
+p { line-height: 1.55; }
+
+label {
+  display: block;
+  margin-bottom: .35rem;
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+input, select, button {
+  width: 100%;
+  padding: .62rem .72rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 183, 104, 0.4);
+  background: rgba(10, 18, 33, 0.9);
+  color: var(--text);
+  font-family: "Fraunces", serif;
+}
+
+button {
+  cursor: pointer;
+  background: linear-gradient(120deg, #1d334d 0%, #3e2a1b 50%, #6b3e1a 100%);
+  transition: transform .22s ease, filter .22s ease, box-shadow .22s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  filter: saturate(1.25);
+  box-shadow: 0 10px 24px rgba(255, 145, 50, 0.28);
+}
+
+.row { margin-bottom: .8rem; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+
+.stats, .scene { grid-column: 1 / -1; }
+
+.stats .emp {
+  border-top: 1px dashed rgba(255, 190, 120, 0.36);
+  padding: .55rem 0;
+  font-size: .95rem;
+}
+
+.buttons { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; }
+.buttons-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .7rem; margin: .6rem 0; }
+
+#contextPanel select { margin: .5rem 0; }
+
+#sceneImage {
+  width: 100%;
+  max-height: 560px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #10182a;
+}
+
+pre { white-space: pre-wrap; color: var(--muted); }
+small, .muted { color: var(--muted); }
+.card {
+  border: 1px dashed rgba(107, 210, 255, .42);
+  border-radius: 10px;
+  padding: .7rem;
+  margin-bottom: .7rem;
+  background: rgba(10, 24, 44, 0.82);
+}
+
+ul { margin: .3rem 0 .7rem 1rem; }
+
+.reveal {
+  opacity: 0;
+  transform: translateY(14px) scale(.99);
+  animation: rise .78s cubic-bezier(.2,.8,.2,1) forwards;
+}
+.r1 { animation-delay: .04s; }
+.r2 { animation-delay: .1s; }
+.r3 { animation-delay: .16s; }
+.r4 { animation-delay: .22s; }
+.r5 { animation-delay: .28s; }
+.r6 { animation-delay: .34s; }
+
+@keyframes rise {
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 860px) {
+  .app { grid-template-columns: 1fr; }
+  .two-col, .buttons, .buttons-3 { grid-template-columns: 1fr; }
+}
